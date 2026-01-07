@@ -1,0 +1,111 @@
+presets:
+  SNV_Detrend_SG_D1:
+    - name: snv                   # arquivo: preprocessing/snv.py
+    - name: detrend               # arquivo: preprocessing/detrend.py
+    - name: sg
+      params:
+        window_length: 15
+        polyorder: 3
+    - name: derivative
+      params:
+        order: 1
+
+  SNV_D1:
+    - name: snv
+    - name: derivative
+      params:
+        order: 1
+
+  SNV_D2:
+    - name: snv
+    - name: derivative
+      params:
+        order: 2
+
+  MSC_SG_OSC:
+    - name: msc
+    - name: sg
+      params:
+        window_length: 11
+        polyorder: 2
+    - name: osc
+      params:
+        components: 1
+
+  OPLS1_SNV_SG_W11_P2:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 11
+        polyorder: 2
+    - name: derivative
+      params:
+        order: 1
+
+  OPLS1_SNV_SG_W15_P2:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 15
+        polyorder: 2
+    - name: derivative
+      params:
+        order: 1
+
+  OPLS1_SNV_SG_W21_P2:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 21
+        polyorder: 2
+    - name: derivative
+      params:
+        order: 1
+
+  OPLS1_SNV_SG_W11_P3:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 11
+        polyorder: 3
+    - name: derivative
+      params:
+        order: 1
+
+  OPLS1_SNV_SG_W15_P3:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 15
+        polyorder: 3
+    - name: derivative
+      params:
+        order: 1
+
+  OPLS1_SNV_SG_W21_P3:
+    - name: opls
+      params:
+        components: 1
+    - name: snv
+    - name: sg
+      params:
+        window_length: 21
+        polyorder: 3
+    - name: derivative
+      params:
+        order: 1

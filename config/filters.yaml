@@ -1,0 +1,70 @@
+# ================================
+#  X-INDEPENDENT PREPROCESSING
+# ================================
+preprocessing:
+  apply_all: true    # if false, only apply those explicitly selected below
+  order: ["raw", "asls", "sg", "snv", "msc", "detrend", "normalize", "emsc", "continuum"]
+
+  raw:
+    enabled: true
+
+  asls:
+    enabled: true
+    lambda: [1e3, 1e4, 1e5, 5e5, 1e6]
+    p: [0.01, 0.05, 0.1, 0.2, 0.3]
+    n_iter: 10
+
+
+  sg:     # Savitzky–Golay (supports D1 and D2 automatically)
+    enabled: true
+    windows: [5, 11, 15, 21, 27, 35, 41]
+    polyorders: [2, 3]
+    derivatives: [0, 1, 2]  # 0 = smoothing, 1 = 1st derivative, 2 = 2nd derivative
+
+  snv:
+    enabled: true
+
+  msc:
+    enabled: true
+
+  detrend:
+    enabled: true
+    degree: [1, 2]
+
+  normalize:
+    enabled: true
+    mode: ["l2", "l1", "zscore"]
+
+  emsc:
+    enabled: true
+    include_quadratic_term: true
+
+  continuum:
+    enabled: true
+    method: ["upper", "lower"]
+    smoothing_window: 5
+
+  wavelet:
+    enabled: true
+    wavelets: ['db1', 'db2', 'db3', 'db4', 'db5', 'sym8']
+    levels: [1, 2, 3, 4]
+    mode: "soft"
+
+
+# ================================
+
+#  y-DEPENDENT TRANSFORMATIONS (ANTI-LEAKAGE)
+# ================================
+y_dependent:
+  apply: true
+  order: ["osc", "opls"]
+
+  osc:
+    enabled: true
+    components: [1, 2, 3]  # pipeline will test multiple components
+    remove_mean: true
+
+  opls:
+    enabled: true
+    max_components: [1, 2, 3]
+    scaling: "center"   # center, autoscale
