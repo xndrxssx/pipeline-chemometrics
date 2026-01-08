@@ -54,11 +54,11 @@ DATA_CONFIG = {
         "targets": ["Amido (mg/g)", "Carboidrato (mg/g)"],
         "label": "Bioquímica Ramo (TellSpec)"
     },
-    # "bioq_folha_fieldspec": {
-    #     "file": BASE_DIR / "datasets" / "Avaliacao_bioquimica_folha.xlsx",
-    #     "targets": ["Amido Folha (mg/g)", "Carboidrato (mg/g)"],
-    #     "label": "Bioquímica Folha (FieldSpec)"
-    # },
+    "bioq_folha_fieldspec": {
+        "file": BASE_DIR / "datasets" / "Avaliacao_bioquimica_folha.xlsx",
+        "targets": ["Amido Folha (mg/g)", "Carboidrato (mg/g)"],
+        "label": "Bioquímica Folha (FieldSpec)"
+    },
     "bioq_ramo_fieldspec": {
         "file": BASE_DIR / "datasets" / "Avaliacao_bioquimica_ramo.xlsx",
         "targets": ["Amido (mg/g)", "Carboidrato (mg/g)"],
