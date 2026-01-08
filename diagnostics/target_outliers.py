@@ -28,10 +28,23 @@ def detect_outliers_iqr(series: pd.Series):
     return np.where((series < lower) | (series > upper))[0]
 
 
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+OUT_DIR = BASE_DIR / "outputs" / "plots" / "targets"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+# ... (keep robust_zscore and detect_outliers_iqr as they are) ...
+
 def analyze_targets(dataset_name: str, y_df: pd.DataFrame, save_plot: bool = True):
     """
     Perform:
-    - Boxplot
+    - Interactive Seaborn Boxplot (Horizontal + Stripplot)
     - IQR outlier detection
     - Robust Z-score detection
     """
@@ -41,10 +54,17 @@ def analyze_targets(dataset_name: str, y_df: pd.DataFrame, save_plot: bool = Tru
 
     # ---- Plot ----
     if save_plot:
+        # Melt the dataframe for better seaborn plotting if multiple columns
+        y_melted = y_df.melt(var_name='Target', value_name='Value')
+        
         plt.figure(figsize=(12, 6))
-        y_df.boxplot()
-        plt.xticks(rotation=45)
-        plt.title(f"Target Distribution — {dataset_name}")
+        # Horizontal Boxplot
+        sns.boxplot(data=y_melted, x='Value', y='Target', palette="pastel", orient='h', showfliers=False)
+        # Overlay points
+        sns.stripplot(data=y_melted, x='Value', y='Target', orient='h', color='black', alpha=0.4, size=4, jitter=True)
+        
+        plt.title(f"Target Distribution: {dataset_name}")
+        plt.grid(True, axis='x', linestyle=':', alpha=0.6)
         plt.tight_layout()
         plt.savefig(OUT_DIR / f"{dataset_name}_targets_boxplot.png", dpi=300)
         plt.close()

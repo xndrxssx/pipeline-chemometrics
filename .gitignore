@@ -35,9 +35,9 @@ ENV/
 temp_joblib/
 
 # Outputs (Prevent committing large models and reports, keep structure if needed)
-outputs/models/
-outputs/plots/
-outputs/reports/
+# outputs/models/
+# outputs/plots/
+# outputs/reports/
 
 # Datasets (Optional: Un-comment if you don't want to commit data)
 # datasets/

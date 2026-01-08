@@ -60,34 +60,60 @@ def pca_diagnostics(X: np.ndarray, dataset_name: str, save_plots: bool = True):
 
     # ------- PLOTS -------
     if save_plots:
-        fig, axs = plt.subplots(2, 2, figsize=(12, 9))
-        fig.suptitle(f"PCA Diagnostics — {dataset_name}")
-
-        # Scores plot
+        
+        # 1. Scores Plot (PC1 vs PC2)
+        plt.figure(figsize=(10, 6))
         var_exp = pca.explained_variance_ratio_ * 100
-        axs[0, 0].scatter(scores[:, 0], scores[:, 1], c='teal', alpha=0.6, s=15, edgecolors='k', linewidth=0.3)
-        axs[0, 0].set_xlabel(f"PC1 ({var_exp[0]:.1f}%)")
-        axs[0, 0].set_ylabel(f"PC2 ({var_exp[1]:.1f}%)")
-        axs[0, 0].set_title("Scores Plot (PC1 vs PC2)")
-        axs[0, 0].grid(True, linestyle=':', alpha=0.5)
+        sc = plt.scatter(scores[:, 0], scores[:, 1], c=mahal, cmap='viridis', 
+                         alpha=0.8, s=40, edgecolors='k', linewidth=0.3)
+        plt.colorbar(sc, label='Mahalanobis Dist')
+        
+        for idx in outliers:
+            plt.text(scores[idx, 0], scores[idx, 1], str(idx), fontsize=9, color='red', weight='bold')
+            
+        plt.xlabel(f"PC1 ({var_exp[0]:.1f}%)")
+        plt.ylabel(f"PC2 ({var_exp[1]:.1f}%)")
+        plt.title(f"Scores Plot: {dataset_name}")
+        plt.grid(True, linestyle=':', alpha=0.5)
+        plt.tight_layout()
+        plt.savefig(OUT_DIR / f"{dataset_name}_pca_scores.png", dpi=300)
+        plt.close()
 
-        # Hotelling T²
-        axs[0, 1].scatter(range(len(t2)), t2, s=10)
-        axs[0, 1].axhline(t2_threshold, color="r", linestyle="--")
-        axs[0, 1].set_title("Hotelling T²")
+        # 2. Influence Plot (T^2 vs Q-Residuals)
+        plt.figure(figsize=(8, 6))
+        
+        # Scatter plot
+        plt.scatter(t2, q_residuals, c='blue', alpha=0.6, edgecolors='k', s=30, label='Samples')
+        
+        # Limits
+        plt.axvline(t2_threshold, color='r', linestyle='--', label=f'T² Limit ({alpha*100:.0f}%)')
+        plt.axhline(q_threshold, color='r', linestyle='--', label=f'Q Limit ({alpha*100:.0f}%)')
+        
+        # Labels for Outliers (high T2 or high Q)
+        for idx in outliers:
+             if t2[idx] > t2_threshold or q_residuals[idx] > q_threshold:
+                plt.text(t2[idx], q_residuals[idx], str(idx), fontsize=8, color='black', weight='bold')
 
-        # Q Residuals
-        axs[1, 0].scatter(range(len(q_residuals)), q_residuals, s=10)
-        axs[1, 0].axhline(q_threshold, color="r", linestyle="--")
-        axs[1, 0].set_title("Q Residuals")
+        plt.xlabel('Hotelling T² (Model Distance)')
+        plt.ylabel('Q-Residuals (Spectral Residual)')
+        plt.title(f"Influence Plot: {dataset_name}")
+        plt.legend(loc='upper right')
+        plt.grid(True, linestyle=':', alpha=0.5)
+        
+        plt.tight_layout()
+        plt.savefig(OUT_DIR / f"{dataset_name}_pca_influence.png", dpi=300)
+        plt.close()
 
-        # Mahalanobis
-        axs[1, 1].scatter(range(len(mahal)), mahal, s=10)
-        axs[1, 1].axhline(mahal_threshold, color="r", linestyle="--")
-        axs[1, 1].set_title("Mahalanobis Distance")
-
-        fig.tight_layout()
-        plt.savefig(OUT_DIR / f"{dataset_name}_pca_diagnostics.png", dpi=300)
+        # 3. Mahalanobis (Optional standalone)
+        plt.figure(figsize=(10, 5))
+        plt.plot(mahal, 'd-', color='purple', markersize=5)
+        plt.axhline(mahal_threshold, color='r', linestyle='--')
+        plt.title(f"Mahalanobis Distance: {dataset_name}")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Distance")
+        plt.grid(True, linestyle=':')
+        plt.tight_layout()
+        plt.savefig(OUT_DIR / f"{dataset_name}_pca_mahalanobis.png", dpi=300)
         plt.close()
 
     return {

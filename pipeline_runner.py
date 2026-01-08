@@ -218,7 +218,10 @@ class PipelineRunner:
         """Generates a string representation of the preprocessing chain."""
         names = []
         for step in chain:
-            name = step['method']
+            name = step.get('method') or step.get('name')
+            if not name:
+                continue
+                
             if 'params' in step:
                 # Add key params for differentiation
                 if name == 'sg':
@@ -283,6 +286,14 @@ class PipelineRunner:
             
         return X[:, mask], wavelengths[mask]
 
+    def get_debug_grid(self):
+        """Returns a minimal grid for quick testing."""
+        print("⚡ DEBUG MODE ACTIVE: Running minimal grid.")
+        return [
+            [{"method": "raw"}],
+            [{"method": "sg", "params": {"window_length": 15, "polyorder": 2, "deriv": 1}}]
+        ]
+
     def run(self):
         print("Starting Chemometrics Pipeline...")
         
@@ -302,7 +313,7 @@ class PipelineRunner:
             # 2. Global Diagnostics (Spectra)
             print(f"   Sensor Detected: {ds.sensor_type}")
             print("   🔍 Running Spectral Diagnostics...")
-            pca_diagnostics(ds.X, dataset_key, save_plots=True)
+            pca_diagnostics(ds.X, dataset_name=dataset_key, save_plots=True)
             
             # 3. Iterate Targets
             for target_col in ds.y.columns:
@@ -315,7 +326,7 @@ class PipelineRunner:
                     continue
                 
                 # Run Target Outlier Analysis
-                analyze_targets(ds.y[[target_col]], dataset_name=dataset_key, output_dir=self.output_dir)
+                analyze_targets(dataset_key, ds.y[[target_col]])
                     
                 # Align X with valid y
                 X_aligned = ds.X[y.index]
@@ -338,10 +349,6 @@ class PipelineRunner:
                 if ds.sensor_type == "FieldSpec":
                     conditions.append(("Full", (350, 2500)))
                     conditions.append(("TellSpec_Sim", (900, 1700)))
-                    
-                    # lit_window = self.get_variable_selection_window(target_col)
-                    # if lit_window:
-                    #     conditions.append(("Window_Selection", lit_window))
                 else:
                     # TellSpec or Unknown -> Use available full range
                     conditions.append(("Full", (ds.wavelengths[0], ds.wavelengths[-1])))
@@ -350,8 +357,8 @@ class PipelineRunner:
                     print(f"      ► Condition: {cond_name} {wl_ranges}")
                     
                     # Apply Spectral Slicing
-                    X_train, _ = self._slice_wavelengths(X_train_orig, ds.wavelengths, wl_ranges)
-                    X_test, _ = self._slice_wavelengths(X_test_orig, ds.wavelengths, wl_ranges)
+                    X_train, wl_train = self._slice_wavelengths(X_train_orig, ds.wavelengths, wl_ranges)
+                    X_test, wl_test = self._slice_wavelengths(X_test_orig, ds.wavelengths, wl_ranges)
                     
                     if X_train.shape[1] == 0:
                         print(f"         ⚠ No wavelengths remaining for {cond_name}. Skipping.")
@@ -374,6 +381,7 @@ class PipelineRunner:
 
                     # 5. Iterate Preprocessing (Full Exhaustive Grid)
                     prep_grid = self.generate_preprocessing_grid()
+                    # prep_grid = self.get_debug_grid() # <--- DEBUG MODE OFF
                     
                     for prep_chain in tqdm(prep_grid, desc=f"         Preprocessing ({cond_name})", leave=False):
                         prep_name = self._get_chain_name(prep_chain)
@@ -386,6 +394,12 @@ class PipelineRunner:
                             
                             # 6. Iterate Models
                             for model_key, model_cfg in self.models_config['models'].items():
+                                
+                                # --- DEBUG FILTER: Only run PLS (REMOVED) ---
+                                # if "pls" not in model_key and "pcr" not in model_key:
+                                #    continue
+                                # ----------------------------------
+
                                 # Filter Models by Task
                                 model_type = model_cfg.get('type', 'regression')
                                 if task_type == "Regression" and model_type == "classification":
@@ -495,12 +509,13 @@ class PipelineRunner:
                                         best_artifact = {
                                             "row": result_row,
                                             "model": train_res['model'],
-                                            "X_train": X_train_proc, # Save processed X for plotting
+                                            "X_train": X_train_proc, 
                                             "y_train": y_train_curr,
                                             "y_pred_cv": train_res['y_pred_cv5'],
                                             "X_test": X_test_proc,
                                             "y_test": y_test_curr,
-                                            "y_pred_test": y_pred_test
+                                            "y_pred_test": y_pred_test,
+                                            "wavelengths": wl_train # STORE WAVELENGTHS HERE
                                         }
                                 
                                 except Exception as e:
@@ -566,8 +581,23 @@ class PipelineRunner:
         plot_test_prediction(artifact['y_test'], artifact['y_pred_test'], target,
                              output_path=self.output_dir / "plots" / "test" / f"{prefix}_test.png")
                              
-        # Variable Importance
-        plot_variable_importance(artifact['model'], model_name=artifact['row']['model'],
+        # Variable Importance (Pass Wavelengths)
+        # We need to reconstruct wavelengths from X_train_proc if possible, 
+        # but X_train_proc might be transformed (PCA scores, etc). 
+        # For simple filters (SG, MSC), column count matches.
+        # If mismatch, plot by index.
+        wl_to_plot = None
+        # We assume artifact['X_train'] has correct shape matching the model input
+        # If we had the original sliced wavelengths stored, we could use them.
+        # Let's try to infer if we saved them in artifact or passed them.
+        # For now, we will use index if transformed.
+        
+        # Improvement: Pass current range wavelengths if no dimension reduction happened
+        # Ideally, we should store used_wavelengths in artifact.
+        
+        plot_variable_importance(artifact['model'], 
+                                 model_name=artifact['row']['model'],
+                                 wavelengths=artifact.get('wavelengths'), # Need to add this to artifact creation
                                  output_path=self.output_dir / "plots" / "importance" / f"{prefix}_importance.png")
                                  
         # Confidence Intervals
@@ -585,13 +615,16 @@ class PipelineRunner:
         # --- Regression Summary ---
         df_reg = df[df['Task'] == 'Regression']
         if not df_reg.empty:
+            # Clean Columns (Drop Classification Metrics which are all NaN)
+            df_reg_clean = df_reg.dropna(axis=1, how='all')
+            
             # Full Log
             log_path = reports_dir / "final_results_regression.xlsx"
-            df_reg.sort_values(by=["dataset", "target", "R2_Test"], ascending=[True, True, False], inplace=True)
-            df_reg.to_excel(log_path, index=False)
+            df_reg_clean.sort_values(by=["dataset", "target", "R2_Test"], ascending=[True, True, False], inplace=True)
+            df_reg_clean.to_excel(log_path, index=False)
             
             # Best Summary
-            best_df = df_reg.sort_values("R2_Test", ascending=False).drop_duplicates(["dataset", "target", "Condition"])
+            best_df = df_reg_clean.sort_values("R2_Test", ascending=False).drop_duplicates(["dataset", "target", "Condition"])
             best_df.sort_values(by=["dataset", "target", "Condition"], inplace=True)
             best_path = reports_dir / "best_models_regression.xlsx"
             best_df.to_excel(best_path, index=False)
@@ -602,13 +635,16 @@ class PipelineRunner:
         # --- Classification Summary ---
         df_cls = df[df['Task'] == 'Classification']
         if not df_cls.empty:
+            # Clean Columns
+            df_cls_clean = df_cls.dropna(axis=1, how='all')
+            
             # Full Log
             log_path = reports_dir / "final_results_classification.xlsx"
-            df_cls.sort_values(by=["dataset", "target", "Accuracy"], ascending=[True, True, False], inplace=True)
-            df_cls.to_excel(log_path, index=False)
+            df_cls_clean.sort_values(by=["dataset", "target", "Accuracy"], ascending=[True, True, False], inplace=True)
+            df_cls_clean.to_excel(log_path, index=False)
             
             # Best Summary
-            best_df = df_cls.sort_values("Accuracy", ascending=False).drop_duplicates(["dataset", "target", "Condition"])
+            best_df = df_cls_clean.sort_values("Accuracy", ascending=False).drop_duplicates(["dataset", "target", "Condition"])
             best_df.sort_values(by=["dataset", "target", "Condition"], inplace=True)
             best_path = reports_dir / "best_models_classification.xlsx"
             best_df.to_excel(best_path, index=False)

@@ -1,50 +1,45 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-import pandas as pd
 
-def plot_variable_importance(model, feature_names=None, model_name="", output_path=None):
+def plot_variable_importance(model, model_name, wavelengths=None, output_path=None):
     """
-    Plots variable importance.
+    Plots variable importance (coefficients or feature importances).
+    If wavelengths is provided, maps X-axis to spectral bands.
     """
     importance = None
     
-    # PLS
-    if hasattr(model, 'coef_') and hasattr(model, 'x_weights_'): # PLS usually
-        # PLS weights (w*) or coeffs. Coeffs are better for "importance" in regression sense?
-        # Often PLS weights w* or VIP scores are used.
-        # Sklearn PLSRegression has `coef_` (B) and `x_weights_`.
-        # Let's use coef_ absolute values or just coef_.
-        importance = np.abs(model.coef_).flatten()
-        
-    # Tree models
+    # Extract importance based on model type
+    if hasattr(model, 'coef_'):
+        importance = model.coef_
+        # Flatten if shape is (1, n_features)
+        if importance.ndim > 1:
+            importance = importance.flatten()
     elif hasattr(model, 'feature_importances_'):
         importance = model.feature_importances_
-        
-    # Linear models (ElasticNet, SVR Linear)
-    elif hasattr(model, 'coef_'):
-         importance = np.abs(model.coef_).flatten()
-         
+    
     if importance is None:
         print(f"No feature importance available for model {model_name}")
         return
 
-    # If many features (spectra), plot as line graph
-    # If few features, bar chart.
-    # Spectra = many features.
+    plt.figure(figsize=(12, 5))
     
-    plt.figure(figsize=(10, 5))
+    # X-Axis Definition
+    if wavelengths is not None and len(wavelengths) == len(importance):
+        x_vals = wavelengths
+        x_label = "Wavelength (nm)"
+    else:
+        x_vals = np.arange(len(importance))
+        x_label = "Variable Index"
     
-    if feature_names is None:
-        feature_names = np.arange(len(importance))
-        
-    plt.plot(feature_names, importance, label='Importance')
-    plt.fill_between(feature_names, importance, alpha=0.3)
+    # Plotting
+    plt.plot(x_vals, importance, color='black', linewidth=1)
+    plt.fill_between(x_vals, 0, importance, color='gray', alpha=0.3)
     
-    plt.xlabel('Variable / Wavelength')
-    plt.ylabel('Importance')
-    plt.title(f'Variable Importance: {model_name}')
-    plt.legend()
+    plt.axhline(0, color='red', linestyle='--', linewidth=0.8)
+    plt.xlabel(x_label)
+    plt.ylabel("Coefficient / Importance")
+    plt.title(f"Variable Importance: {model_name}")
     plt.grid(True, linestyle=':', alpha=0.6)
     
     if output_path:

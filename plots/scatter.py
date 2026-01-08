@@ -28,12 +28,13 @@ def get_stats_text(y_true, y_pred, label="Set"):
 def plot_calibration_cv(y_train, y_pred_train, y_cv, y_pred_cv, target_name, output_path=None):
     """
     Scatter plot: Real vs Pred (Train and CV) with metrics.
+    Rectangular aspect ratio.
     """
-    plt.figure(figsize=(8, 7))
+    plt.figure(figsize=(12, 6)) # Rectangular
     
-    # Plot Points
-    plt.scatter(y_train, y_pred_train, c='#1f77b4', alpha=0.5, label='Calibration')
-    plt.scatter(y_cv, y_pred_cv, c='#ff7f0e', alpha=0.5, label='CV')
+    # Plot Points - Blue for Cal, Red for CV
+    plt.scatter(y_train, y_pred_train, c='blue', alpha=0.5, label='Calibration')
+    plt.scatter(y_cv, y_pred_cv, c='red', alpha=0.5, label='CV')
     
     # Identity line
     all_vals = np.concatenate([y_train, y_cv, y_pred_train, y_pred_cv])
@@ -48,19 +49,22 @@ def plot_calibration_cv(y_train, y_pred_train, y_cv, y_pred_cv, target_name, out
     
     # Place text boxes
     props = dict(boxstyle='round', facecolor='white', alpha=0.8)
-    plt.text(0.05, 0.95, txt_train, transform=plt.gca().transAxes, fontsize=9,
+    plt.text(1.02, 0.98, txt_train, transform=plt.gca().transAxes, fontsize=9,
              verticalalignment='top', bbox=props)
-    plt.text(0.05, 0.70, txt_cv, transform=plt.gca().transAxes, fontsize=9,
+    plt.text(1.02, 0.60, txt_cv, transform=plt.gca().transAxes, fontsize=9,
              verticalalignment='top', bbox=props)
     
     plt.xlabel(f'Measured {target_name}')
     plt.ylabel(f'Predicted {target_name}')
     plt.title(f'Calibration & CV: {target_name}')
-    plt.legend(loc='lower right')
+    plt.legend(loc='upper left')
     plt.grid(True, linestyle=':', alpha=0.6)
     
     plt.xlim(min_val - padding, max_val + padding)
     plt.ylim(min_val - padding, max_val + padding)
+    
+    # Adjust layout to make room for text on the right
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
     
     if output_path:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -72,11 +76,11 @@ def plot_calibration_cv(y_train, y_pred_train, y_cv, y_pred_cv, target_name, out
 def plot_test_prediction(y_test, y_pred_test, target_name, output_path=None, buffer=None):
     """
     Scatter plot: Real vs Pred (Test only) with detailed metrics.
-    Can save to file (output_path) or memory buffer (buffer).
+    Rectangular aspect ratio.
     """
-    plt.figure(figsize=(7, 6))
+    plt.figure(figsize=(12, 6)) # Rectangular
     
-    # Plot
+    # Plot - Green points as requested
     plt.scatter(y_test, y_pred_test, c='#2ca02c', alpha=0.6, label='Test Data')
     
     # Identity line
@@ -86,27 +90,29 @@ def plot_test_prediction(y_test, y_pred_test, target_name, output_path=None, buf
     
     plt.plot([min_val, max_val], [min_val, max_val], 'k--', lw=2, label='1:1 Target')
     
-    # Fit line
+    # Fit line - Red as requested
     lr = LinearRegression()
     lr.fit(y_test.reshape(-1, 1), y_pred_test)
     line_x = np.linspace(min_val, max_val, 100).reshape(-1, 1)
     line_y = lr.predict(line_x)
-    plt.plot(line_x, line_y, 'g-', alpha=0.5, lw=1.5, label='Fit Line')
+    plt.plot(line_x, line_y, 'r-', alpha=0.8, lw=1.5, label='Fit Line')
     
     # Metrics
     stats_txt = get_stats_text(y_test, y_pred_test, "Test")
     props = dict(boxstyle='round', facecolor='white', alpha=0.9)
-    plt.text(0.05, 0.95, stats_txt, transform=plt.gca().transAxes, fontsize=10,
+    plt.text(1.02, 0.95, stats_txt, transform=plt.gca().transAxes, fontsize=10,
              verticalalignment='top', bbox=props)
     
     plt.xlabel(f'Measured {target_name}')
     plt.ylabel(f'Predicted {target_name}')
     plt.title(f'External Prediction: {target_name}')
-    plt.legend(loc='lower right')
+    plt.legend(loc='upper left')
     plt.grid(True, linestyle=':', alpha=0.6)
     
     plt.xlim(min_val - padding, max_val + padding)
     plt.ylim(min_val - padding, max_val + padding)
+    
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
     
     if output_path:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
