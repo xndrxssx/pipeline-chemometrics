@@ -4,7 +4,7 @@
 global:
   test_size: 0.30               # 20% external holdout
   random_state: 42
-  n_jobs: -1
+  n_jobs: 8
   scoring: "r2"                 # selection metric
   save_best_only: true
   output_dir: "../outputs/models"

@@ -5,6 +5,8 @@ from scipy.sparse.linalg import spsolve
 
 def _asls_baseline(y, lam=1e5, p=0.01, n_iter=10):
     """Applies Asymmetric Least Squares baseline correction to a 1D spectrum."""
+    lam = float(lam)
+    p = float(p)
     L = len(y)
     D = sparse.diags([1, -2, 1], [0, -1, -2], shape=(L, L-2))
     D = D.dot(D.transpose())
