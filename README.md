@@ -139,10 +139,10 @@ models:
 ## 🛠 Troubleshooting
 
 *   **"Method not found":** Ensure the method name in YAML matches the Python module name in `preprocessing/`.
-*   **Memory Issues:** If `n_jobs=-1` crashes your system (rare with 128GB RAM but possible), reduce it to `n_jobs=10` in `config/models.yaml`.
+*   **Memory Issues:** If `n_jobs=-1` crashes your system, reduce it to `n_jobs=10` in `config/models.yaml`.
 *   **Slow Execution:** Disable computationally expensive filters (like Wavelet or large OPLS grids) in `filters.yaml` or reduce the number of Model Hyperparameters.
 
 ---
 
-**Author:** Luyza
+**Author:** Andressa
 **Date:** January 2026
