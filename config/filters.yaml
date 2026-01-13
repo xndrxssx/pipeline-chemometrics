@@ -9,7 +9,7 @@ preprocessing:
     enabled: true
 
   asls:
-    enabled: true
+    enabled: false
     lambda: [1e3, 1e4, 1e5, 5e5, 1e6]
     p: [0.01, 0.05, 0.1, 0.2, 0.3]
     n_iter: 10
@@ -22,30 +22,30 @@ preprocessing:
     derivatives: [0, 1, 2]  # 0 = smoothing, 1 = 1st derivative, 2 = 2nd derivative
 
   snv:
-    enabled: true
+    enabled: false
 
   msc:
-    enabled: true
+    enabled: false
 
   detrend:
-    enabled: true
+    enabled: false
     degree: [1, 2]
 
   normalize:
-    enabled: true
+    enabled: false
     mode: ["l2", "l1", "zscore"]
 
   emsc:
-    enabled: true
+    enabled: false
     include_quadratic_term: true
 
   continuum:
-    enabled: true
+    enabled: false
     method: ["upper", "lower"]
     smoothing_window: 5
 
   wavelet:
-    enabled: true
+    enabled: false
     wavelets: ['db1', 'db2', 'db3', 'db4', 'db5', 'sym8']
     levels: [1, 2, 3, 4]
     mode: "soft"
@@ -65,6 +65,6 @@ y_dependent:
     remove_mean: true
 
   opls:
-    enabled: true
+    enabled: false
     max_components: [1, 2, 3]
     scaling: "center"   # center, autoscale
